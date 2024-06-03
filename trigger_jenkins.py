@@ -13,6 +13,8 @@ def trigger_jenkins_job():
     # Jenkins job URL
     job_url = f"{JENKINS_URL}/job/{JOB_NAME}/build"
     
+    print(f"Triggering job '{JOB_NAME}' at URL: {job_url}")
+    
     # Make the HTTP POST request to trigger the job
     response = requests.post(job_url, auth=HTTPBasicAuth(USERNAME, API_TOKEN))
     
@@ -23,4 +25,6 @@ def trigger_jenkins_job():
         print(response.text)
 
 if __name__ == "__main__":
+    print("Starting Jenkins job trigger...")
     trigger_jenkins_job()
+    print("Jenkins job trigger completed.")
