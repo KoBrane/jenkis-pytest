@@ -9,25 +9,20 @@ JOB_NAME = 'keyjobpython'
 USERNAME = 'wils'
 API_TOKEN = '1137b5ee4ff4648ea9f7db3a92c5054c4a'
 
-# def trigger_jenkins_job():
-#     # Jenkins job URL
-#     job_url = f"{JENKINS_URL}/job/{JOB_NAME}/build"
+def trigger_jenkins_job():
+    # Jenkins job URL
+    job_url = f"{JENKINS_URL}/job/{JOB_NAME}/build"
     
-#     print(f"Triggering job '{JOB_NAME}' at URL: {job_url}")
+    print(f"Triggering job '{JOB_NAME}' at URL: {job_url}")
     
-#     # Make the HTTP POST request to trigger the job
-#     response = requests.post(job_url, auth=HTTPBasicAuth(USERNAME, API_TOKEN))
+    # Make the HTTP POST request to trigger the job
+    response = requests.post(job_url, auth=HTTPBasicAuth(USERNAME, API_TOKEN))
     
-#     if response.status_code == 201:
-#         print(f"Job '{JOB_NAME}' triggered successfully.")
-#     else:
-#         print(f"Failed to trigger job '{JOB_NAME}'. Status code: {response.status_code}")
-#         print(response.text)
-
-# if __name__ == "__main__":
-#     print("Starting Jenkins job trigger...")
-#     trigger_jenkins_job()
-#     print("Jenkins job trigger completed.")
+    if response.status_code == 201:
+        print(f"Job '{JOB_NAME}' triggered successfully.")
+    else:
+        print(f"Failed to trigger job '{JOB_NAME}'. Status code: {response.status_code}")
+        print(response.text)
 
 def write_love_letter():
     love_letter = """
@@ -45,9 +40,14 @@ def write_love_letter():
     [Your Name]
     """
 
-    # Write the love letter to a file
-    with open('love_letter.txt', 'w') as file:
-        file.write(love_letter)
+    # Print the love letter to the console
+    print(love_letter)
 
 if __name__ == "__main__":
+    print("Starting Jenkins job trigger...")
+    trigger_jenkins_job()
+    print("Jenkins job trigger completed.")
+
+    print("\nWriting a love letter...")
     write_love_letter()
+    print("Love letter written.")
