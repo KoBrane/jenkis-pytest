@@ -13,6 +13,13 @@ pipeline {
             }
         }
         
+        stage('Install Dependencies') {
+            steps {
+                // Install requests module
+                sh 'pip install requests'
+            }
+        }
+        
         stage('Run Python Script') {
             steps {
                 // Run Python script directly
