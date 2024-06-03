@@ -1,13 +1,13 @@
-# import requests
-# from requests.auth import HTTPBasicAuth
+import requests
+from requests.auth import HTTPBasicAuth
 
-# # Jenkins server URL
-# JENKINS_URL = 'http://localhost:8080'
-# # Jenkins job name
-# JOB_NAME = 'keyjobpython'
-# # Jenkins user credentials
-# USERNAME = 'wils'
-# API_TOKEN = '1137b5ee4ff4648ea9f7db3a92c5054c4a'
+# Jenkins server URL
+JENKINS_URL = 'http://localhost:8080'
+# Jenkins job name
+JOB_NAME = 'keyjobpython'
+# Jenkins user credentials
+USERNAME = 'wils'
+API_TOKEN = '1137b5ee4ff4648ea9f7db3a92c5054c4a'
 
 # def trigger_jenkins_job():
 #     # Jenkins job URL
