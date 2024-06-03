@@ -16,7 +16,7 @@ pipeline {
         stage('Run Python Script') {
             steps {
                 // Run Python script directly
-                sh 'python trigger_jenkins.py'
+                sh 'python3 trigger_jenkins.py'
             }
         }
     }
