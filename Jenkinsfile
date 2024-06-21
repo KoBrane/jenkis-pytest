@@ -1,102 +1,123 @@
 pipeline {
     agent any
     
-    triggers {
-        pollSCM('*/5 * * * *')
+    parameters {
+        string(name: 'repo_owner', defaultValue: 'KoBrane', description: 'GitHub repository owner')
+        string(name: 'repo_name', defaultValue: 'jenkis-pytest', description: 'GitHub repository name')
+        string(name: 'milestone_pattern', defaultValue: 'Release/.* Approved|CAB Approved', description: 'Regex pattern to match milestone titles')
+        string(name: 'TARGET_BRANCH', defaultValue: 'main', description: 'Target branch to clone')
+    }
+    
+    environment {
+        GITHUB_REPO = "${params.repo_owner}/${params.repo_name}"
+        API_BASE_URL = 'https://api.github.com/repos/'
     }
     
     stages {
-        stage('Checkout') {
+        stage('Clone Repository') {
             steps {
-                // Checkout the repository
-                checkout scm
+                script {
+                    def repoDir = "${params.repo_name}"
+                    if (fileExists(repoDir)) {
+                        echo "Removing existing directory: ${repoDir}"
+                        deleteDir()
+                    }
+                    withCredentials([
+                        usernamePassword(credentialsId: 'wils-new',
+                            usernameVariable: 'USERNAME',
+                            passwordVariable: 'GITHUB_TOKEN')
+                    ]) {
+                        sh "git clone --branch ${params.TARGET_BRANCH} --depth 1 https://${USERNAME}:${GITHUB_TOKEN}@github.com/${params.repo_owner}/${params.repo_name}.git"
+                    }
+                }
             }
         }
         
-        stage('Create Virtual Environment') {
+        stage('Fetch Milestones and PRs') {
             steps {
-                // Create a virtual environment
-                sh 'python3 -m venv venv'
-            }
-        }
-        
-        stage('Install Dependencies') {
-            steps {
-                // Activate the virtual environment and install requests module
-                sh '. venv/bin/activate && pip install requests'
-            }
-        }
-        
-        stage('Run Python Script') {
-            steps {
-                // Activate the virtual environment and run Python script
-                sh '. venv/bin/activate && python3 trigger_jenkins.py'
+                script {
+                    withCredentials([
+                        usernamePassword(credentialsId: 'wils-new',
+                            usernameVariable: 'USERNAME',
+                            passwordVariable: 'GITHUB_TOKEN')
+                    ]) {
+                        try {
+                            // Fetch milestones matching the combined pattern
+                            def milestones = fetchMilestones(params.milestone_pattern)
+                        
+                            milestones.each { milestone ->
+                                def milestoneTitle = milestone.title
+                                def milestoneNumber = milestone.number
+                                echo "Checking milestone: ${milestoneTitle} (Number: ${milestoneNumber})"
+                            
+                                def prs = fetchPRsForMilestone(milestoneNumber)
+                            
+                                if (prs.isEmpty()) {
+                                  echo "Milestone '${milestoneTitle}' has no associated PRs."
+                                } else {
+                                    echo "Milestone '${milestoneTitle}' PRs:"
+                                    prs.each { pr ->
+                                        echo "- ${pr.title} (${pr.html_url})"
+                                    }
+                                }
+                            }
+                        } catch (Exception e) {
+                            error "Error fetching milestones and PRs: ${e.message}"
+                        }
+                    }
+                }
             }
         }
     }
 }
-// pipeline {
-//     agent any
 
-//     triggers {
-//         // Schedule the job to run every 5 minutes
-//         cron('H/5 * * * *')
-//     }
+def fetchMilestones(milestonePattern) {
+    def milestones = []
+    def pageNumber = 1
+    
+    while (true) {
+        def milestonesUrl = "${env.API_BASE_URL}${env.GITHUB_REPO}/milestones?page=${pageNumber}&per_page=100"
+        def response = sh(
+            script: "curl -s -H 'Authorization: Bearer ${env.GITHUB_TOKEN}' '${milestonesUrl}'",
+            returnStdout: true
+        )
+        
+        def pageData = readJSON(text: response)
+        def matchingMilestones = pageData.findAll { it.title =~ milestonePattern }
+        milestones.addAll(matchingMilestones)
+        
+        if (pageData.size() < 100) {
+            break
+        } else {
+            pageNumber++
+        }
+    }
+    
+    return milestones
+}
 
-//     environment {
-//         // Define the repository URL
-//         REPO_URL = 'https://github.com/KoBrane/jenkis-pytest.git'
-//         // Define the branch to check
-//         BRANCH = 'main'
-//     }
-
-//     stages {
-//         stage('Check and Pull Changes') {
-//             steps {
-//                 script {
-//                     // Clone the repository if it doesn't exist, otherwise fetch the latest changes
-//                     if (!fileExists('jenkis-pytest')) {
-//                         git branch: env.BRANCH, url: env.REPO_URL
-//                     } else {
-//                         dir('jenkis-pytest') {
-//                             sh 'git fetch --all'
-//                             def changes = sh(script: "git diff --name-only origin/${env.BRANCH}", returnStdout: true).trim()
-//                             if (changes) {
-//                                 echo 'Changes detected, pulling the latest changes'
-//                                 sh 'git pull origin ${env.BRANCH}'
-//                             } else {
-//                                 echo 'No changes detected'
-//                             }
-//                         }
-//                     }
-//                 }
-//             }
-//         }
-
-//         stage('Set Up Python Environment') {
-//             steps {
-//                 script {
-//                     // Ensure necessary Python packages are installed
-//                     sh '''
-//                         python3 -m venv venv
-//                         . venv/bin/activate
-//                         pip install requests
-//                     '''
-//                 }
-//             }
-//         }
-
-//         stage('Run Python Script') {
-//             steps {
-//                 script {
-//                     dir('jenkis-pytest') {
-//                         sh '''
-//                             . ../venv/bin/activate
-//                             python3 trigger_jenkins.py
-//                         '''
-//                     }
-//                 }
-//             }
-//         }
-//     }
-// }
+def fetchPRsForMilestone(milestoneNumber) {
+    def prs = []
+    def pageNumber = 1
+    
+    while (true) {
+        def prsUrl = "${env.API_BASE_URL}${env.GITHUB_REPO}/issues?page=${pageNumber}&per_page=100&state=all&milestone=${milestoneNumber}"
+        
+        def response = sh(
+            script: "curl -s -H 'Authorization: Bearer ${env.GITHUB_TOKEN}' '${prsUrl}'",
+            returnStdout: true
+        )
+        
+        def pageData = readJSON(text: response)
+        def filteredPRs = pageData.findAll { it.pull_request && it.milestone?.number == milestoneNumber }
+        prs.addAll(filteredPRs)
+        
+        if (pageData.size() < 100) {
+            break
+        } else {
+            pageNumber++
+        }
+    }
+    
+    return prs
+}
