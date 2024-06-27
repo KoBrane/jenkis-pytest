@@ -149,7 +149,7 @@ pipeline {
                 script {
                     while (true) {
                         try {
-                            env.AVAILABLE_PRS = sh(script: 'python -c "import milestone as rp; print(rp.check_pr())"', returnStdout: true).trim()
+                            env.AVAILABLE_PRS = sh(script: 'python3 -c "import milestone as rp; print(rp.check_pr())"', returnStdout: true).trim()
                             
                             if (env.AVAILABLE_PRS == '[]' || env.AVAILABLE_PRS == '') {
                                 echo "No PRs found... sleeping"
@@ -173,7 +173,7 @@ pipeline {
                     env.PR = env.AVAILABLE_PRS.split(',')[0].replaceAll("[\\[\\]]", "").trim()
                     echo "Running PR: ${env.PR}"
                     
-                    env.CMD = "python milestone.py ${env.PR} --auto --onlynew"
+                    env.CMD = "python3 milestone.py ${env.PR} --auto --onlynew"
                 }
             }
         }
@@ -193,7 +193,7 @@ pipeline {
                         } catch (Exception e) {
                             echo "Attempt ${count + 1} failed. Retrying..."
                             sleep(time: 60, unit: 'SECONDS')
-                            env.CMD = "sleep 10 && echo 'y' | python milestone.py ${env.PR} --auto"
+                            env.CMD = "sleep 10 && echo 'y' | python3 milestone.py ${env.PR} --auto"
                         }
                     }
                 }
@@ -204,7 +204,7 @@ pipeline {
     // post {
     //     failure {
     //         script {
-    //             sh "python -c 'import slack; slack.main([\"--prmilestone\", \"${env.PR}\", \"--fail\"])'"
+    //             sh "python3 -c 'import slack; slack.main([\"--prmilestone\", \"${env.PR}\", \"--fail\"])'"
     //         }
     //     }
     // }
