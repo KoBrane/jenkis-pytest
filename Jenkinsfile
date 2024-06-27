@@ -510,7 +510,7 @@ pipeline {
                     while (true) {
                         try {
                             // Fetch available PRs
-                            def availablePRs = sh(script: 'python -c "import milestone as rp; print(rp.check_pr())"', returnStdout: true).trim()
+                            def availablePRs = sh(script: 'python3 -c "import milestone as rp; print(rp.check_pr())"', returnStdout: true).trim()
                             
                             if (availablePRs == '[]' || availablePRs.isEmpty()) {
                                 echo "No PRs found... sleeping"
@@ -529,7 +529,7 @@ pipeline {
                                 // Retry logic
                                 for (int count = 0; count <= maxTries; count++) {
                                     try {
-                                        sh "python milestone.py ${PR} --auto --onlynew"
+                                        sh "python3 milestone.py ${PR} --auto --onlynew"
                                         break // Break if successful
                                     } catch (Exception e) {
                                         echo "Attempt ${count + 1} failed. Retrying..."
@@ -538,7 +538,7 @@ pipeline {
                                             echo "Retrying with a delay..."
                                             sleep(time: 10, unit: 'SECONDS')
                                         } else {
-                                            sh "python -c 'import slack; slack.main([\"--prmilestone\", \"${PR}\", \"--fail\"])'"
+                                            sh "python3 -c 'import slack; slack.main([\"--prmilestone\", \"${PR}\", \"--fail\"])'"
                                             error("Max retries reached for PR ${PR}. Exiting.")
                                         }
                                     }
