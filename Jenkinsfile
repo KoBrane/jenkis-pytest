@@ -226,7 +226,7 @@ pipeline {
                     
                     while (true) {
                         try {
-                            def availablePRs = sh(script: 'python3 -c "import run_process as rp; print(rp.check_pr())"', returnStdout: true).trim()
+                            def availablePRs = sh(script: 'python3 -c "import milestone as rp; print(rp.check_pr())"', returnStdout: true).trim()
                             
                             if (availablePRs == '[]' || availablePRs == '') {
                                 echo "No PRs found... sleeping"
@@ -239,7 +239,7 @@ pipeline {
                             def PR = availablePRs.split(',')[0].replaceAll("[\\[\\]]", "").trim()
                             echo "Running PR: ${PR}"
                             
-                            def cmd = "python3 run_process.py ${PR} --auto --onlynew"
+                            def cmd = "python3 milestone.py ${PR} --auto --onlynew"
                             
                             for (int count = 0; count <= maxTries; count++) {
                                 if (count == maxTries) {
@@ -253,7 +253,7 @@ pipeline {
                                 } catch (Exception e) {
                                     echo "Attempt ${count + 1} failed. Retrying..."
                                     sleep(time: 60, unit: 'SECONDS')
-                                    cmd = "sleep 10 && echo 'y' | python3 run_process.py ${PR} --auto"
+                                    cmd = "sleep 10 && echo 'y' | python3 milestone.py ${PR} --auto"
                                 }
                             }
                         } catch (Exception e) {
