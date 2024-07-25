@@ -17,7 +17,7 @@ pipeline {
                         branches: [[name: "*/${BRANCH}"]], 
                         userRemoteConfigs: [[
                             url: "https://github.com/${REPO_OWNER}/${REPO_NAME}.git",
-                            credentialsId: 'god-level-access'
+                            credentialsId: 'god-level-token'
                         ]]
                     ])
                 }
@@ -27,7 +27,7 @@ pipeline {
         stage('Fetch Milestones') {
             steps {
                 script {
-                    withCredentials([usernamePassword(credentialsId: 'god-level-access', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                    withCredentials([usernamePassword(credentialsId: 'god-level-token', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                         def allMilestones = fetchAllMilestones()
                         echo "Fetched Milestones: ${allMilestones}"
                         
