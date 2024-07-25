@@ -79,7 +79,7 @@ def fetchAllMilestones() {
     def response = sh(script: """
         set -x
         curl -s -v -f -u ${env.USERNAME}:${env.PASSWORD} \
-             "https://github.com/api/v3/repos/${REPO_OWNER}/${REPO_NAME}/milestones?per_page=100&state=all"
+             "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/milestones?per_page=100&state=all"
     """, returnStdout: true)
     
     return readJSON(text: response.trim())
@@ -115,7 +115,7 @@ def fetchPRs(milestoneNumber) {
     def response = sh(script: """
         set -x
         curl -v -f -s -u ${env.USERNAME}:${env.PASSWORD} \
-             "https://github.com/api/v3/repos/${REPO_OWNER}/${REPO_NAME}/issues?milestone=${milestoneNumber}&per_page=100&state=all"
+             "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/issues?milestone=${milestoneNumber}&per_page=100&state=all"
     """, returnStdout: true)
     
     def issues = readJSON(text: response.trim())
