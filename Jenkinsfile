@@ -81,8 +81,16 @@ def fetchAllMilestones() {
         curl -s -v -f -u ${env.USERNAME}:${env.PASSWORD} \
              "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/milestones?per_page=100&state=all"
     """, returnStdout: true)
+    def (content, statusCode) = response.trim().split('\n')
     
-    return readJSON(text: response.trim())
+    echo "HTTP Status Code: ${statusCode}"
+    echo "Response content: ${content}"
+    
+    if (statusCode != "200" || content.trim().startsWith('<!DOCTYPE html>')) {
+        error "Received unexpected response. Status code: ${statusCode}"
+    }
+    
+    return readJSON(text: content)
 }
 
 def filterReleaseMilestones(allMilestones) {
@@ -117,6 +125,7 @@ def fetchPRs(milestoneNumber) {
         curl -v -f -s -u ${env.USERNAME}:${env.PASSWORD} \
              "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/issues?milestone=${milestoneNumber}&per_page=100&state=all"
     """, returnStdout: true)
+
     
     def issues = readJSON(text: response.trim())
     return issues.findAll { it.pull_request }
