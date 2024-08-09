@@ -1,0 +1,175 @@
+import unittest
+from unittest.mock import MagicMock, patch
+
+# Mock imports
+mock_github_util = MagicMock()
+mock_gocd_util = MagicMock()
+mock_jenkins_util = MagicMock()
+mock_jira_util = MagicMock()
+mock_metrics_util = MagicMock()
+mock_branch_merge = MagicMock()
+mock_gocd_monitor = MagicMock()
+mock_metadata = MagicMock()
+mock_migration_rules_update = MagicMock()
+mock_slack = MagicMock()
+mock_ArtifactoryPath = MagicMock()
+mock_requests = MagicMock()
+
+# Replace with actual imports where the functions are used
+sys.modules['github_util'] = mock_github_util
+sys.modules['gocd_util'] = mock_gocd_util
+sys.modules['jenkins_util'] = mock_jenkins_util
+sys.modules['jira_util'] = mock_jira_util
+sys.modules['metrics_util'] = mock_metrics_util
+sys.modules['branch_merge'] = mock_branch_merge
+sys.modules['gocd_monitor'] = mock_gocd_monitor
+sys.modules['metadata'] = mock_metadata
+sys.modules['migration_rules_update'] = mock_migration_rules_update
+sys.modules['slack'] = mock_slack
+sys.modules['artifactory'] = mock_ArtifactoryPath
+sys.modules['requests'] = mock_requests
+
+# Define mocks for environment variables
+@patch.dict('os.environ', {
+    'JENKINS_PIPELINE': 'jenkins_pipeline',
+    'ART_USER': 'art_user',
+    'ART_PASSWORD': 'art_pass',
+    'JIRA_PROJECT': 'jira_project',
+    'JIRA': 'jira_url',
+    'MONO_URL': 'mono_url',
+    'MONO_GIT': 'mono_git',
+    'MILESTONE': 'ms_approved',
+    'BASE_BRANCH': 'mono_branch',
+    'MONO_PIPELINE': 'mono_pipeline',
+    'VM_PIPELINE': 'vm_pipeline',
+    'AWS_PIPELINE': 'aws_pipeline',
+    'REPO': 'repo',
+    'ORGANIZATION': 'organization',
+    'OVA_REPO': 'ova_repo',
+    'AP_BASE_URL': 'ap_base_url',
+    'REMOTEBUILD_USER': 'rb_user',
+    'REMOTEBUILD_TOKEN': 'rb_token'
+})
+class TestScript(unittest.TestCase):
+
+    @patch('subprocess.Popen')
+    @patch('os.makedirs')
+    @patch('builtins.open')
+    def test_show_output(self, mock_open, mock_makedirs, mock_popen):
+        mock_open.return_value = MagicMock()
+        show_output('Test question', 'Test name', 'Test version')
+
+    @patch('platform.system')
+    @patch('subprocess.Popen')
+    def test_notify(self, mock_popen, mock_platform):
+        mock_platform.return_value = 'Linux'
+        notify('Test message')
+
+    @patch('builtins.input', return_value='y')
+    def test_get_value(self, mock_input):
+        result = get_value('Enter value: ', values=['y', 'n'])
+        self.assertEqual(result, 'y')
+
+    @patch('git_server.get_pr')
+    @patch('git_server.check_prs')
+    def test_check_pr(self, mock_check_prs, mock_get_pr):
+        mock_check_prs.return_value = {'ready': [], 'errors': {}}
+        mock_get_pr.return_value = MagicMock()
+        ready_prs = check_pr()
+        self.assertEqual(ready_prs, [])
+
+    @patch('git_server.create_milestone')
+    @patch('git_server.get_milestone', side_effect=Exception('unable to find milestone'))
+    def test_milestone(self, mock_get_milestone, mock_create_milestone):
+        milestone('1.0.0', {})
+        mock_create_milestone.assert_called_once_with('1.0.0 CAB Approved')
+
+    @patch('git_server.add_pr_label')
+    def test_add_pr_label(self, mock_add_pr_label):
+        state = {'select PRs to include': [1, 2, 3]}
+        add_pr_label('1.0.0', state)
+        mock_add_pr_label.assert_called_with(3, 'skip-jenkins')
+
+    @patch('git_server.get_pr')
+    @patch('git_server.set_pr_milestone')
+    def test_move_pr(self, mock_set_pr_milestone, mock_get_pr):
+        state = {'select PRs to include': [1, 2]}
+        move_pr('1.0.0', state)
+        mock_set_pr_milestone.assert_called_with(2, '1.0.0 CAB Approved')
+
+    @patch('git_server.new_pr')
+    @patch('git_server.add_pr_label')
+    def test_final_pr(self, mock_add_pr_label, mock_new_pr):
+        mock_new_pr.return_value = MagicMock(number=10)
+        result = final_pr('1.0.0', {})
+        self.assertEqual(result, 10)
+        mock_add_pr_label.assert_called_once_with(10, 'skip-jenkins')
+
+    @patch('requests.get')
+    def test_get_ova_details(self, mock_get):
+        mock_get.return_value.json.return_value = {'size': 5000000000}
+        result = get_ova_details('1.0.0', {})
+        self.assertEqual(result['ova_size'], '5.0')
+
+    @patch('ArtifactoryPath.deploy_file')
+    def test_upload_to_artifactory(self, mock_deploy_file):
+        state = {'run remotebuild': {'result': {'build_info': {'build_num': 123}}}}
+        upload_to_artifactory('1.0.0', state)
+        mock_deploy_file.assert_called_with('allure-report.zip')
+
+    @patch('git_server.create_dev_release')
+    def test_release(self, mock_create_dev_release):
+        state = {'select PRs to include': [1, 2]}
+        release('1.0.0', state)
+        mock_create_dev_release.assert_called_once_with('1.0.0', ANY, 'mono_branch')
+
+    @patch('git_server.delete_branch')
+    @patch('git_server.prune_milestone')
+    def test_delete_branches(self, mock_prune_milestone, mock_delete_branch):
+        state = {'run branch-merge': {'result': 'branch'}}
+        delete_branches('1.0.0', state)
+        mock_delete_branch.assert_called_once_with('branch')
+
+    @patch('git_server.delete_n_oldest_milestones')
+    def test_delete_oldest_milestone(self, mock_delete_n_oldest_milestones):
+        delete_oldest_milestone('1.0.0', {})
+        mock_delete_n_oldest_milestones.assert_called_once_with(1)
+
+    @patch('git_server.set_pr_milestone')
+    def test_set_major_version_milestone(self, mock_set_pr_milestone):
+        state = {'select PRs to include': [1]}
+        set_major_version_milestone('1.0.0', state)
+        mock_set_pr_milestone.assert_called_once_with(1, '1.0')
+
+    @patch('git_server.add_pr_label')
+    def test_add_patch_label(self, mock_add_pr_label):
+        state = {'select PRs to include': [1]}
+        add_patch_label('1.0.0', state)
+        mock_add_pr_label.assert_called_once_with(1, 'PATCH')
+
+    @patch('git_server.get_pr')
+    @patch('git_server.get_user_real_name')
+    def test_calculate_metrics(self, mock_get_user_real_name, mock_get_pr):
+        state = {
+            'run remotebuild': {'result': {'build_info': {'build_num': '123'}, 'duration': 120}},
+            'count pr queue': {'result': {'pr_count': 5}},
+            'create & merge PR for the next release': {'result': 10}
+        }
+        mock_get_pr.return_value = MagicMock(labels=[MagicMock(name='name', value='PATCH')])
+        metrics_util.Elk().commit_dev_stats.return_value = None
+        duration = calculate_metrics('1.0.0', state)
+        self.assertEqual(duration, '2:00:00')
+
+    @patch('slack.main')
+    def test_slack_message(self, mock_slack_main):
+        slack_message('1.0.0', {})
+        mock_slack_main.assert_called_once_with(['--version', '1.0.0'])
+
+    @patch('builtins.open', new_callable=unittest.mock.mock_open, read_data='1.0.0')
+    @patch('os.path.exists', return_value=True)
+    def test_get_version(self, mock_exists, mock_open):
+        version = get_version()
+        self.assertEqual(version, '1.0.0')
+
+if __name__ == '__main__':
+    unittest.main()
