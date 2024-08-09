@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, ANY
 import os
 import sys
 
@@ -168,4 +168,7 @@ def test_calculate_metrics(mocker):
     state = {
         'run remotebuild': {'result': {'build_info': {'build_num': '123'}, 'duration': 120}},
         'count pr queue': {'result': {'pr_count': 5}},
-        'create & merge PR for the next release': {'result':
+        'create & merge PR for the next release': {'result': {'pr_number': 1, 'duration': 10}}
+    }
+    calculate_metrics('1.0.0', state)
+    mock_commit_dev_stats.assert_called_once()
