@@ -1,2 +1,5 @@
 # requirements.txt
 slack_sdk
+pytest
+pytest-mock
+requests
