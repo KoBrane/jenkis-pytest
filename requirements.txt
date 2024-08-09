@@ -3,3 +3,4 @@ slack_sdk
 pytest
 pytest-mock
 requests
+unittest.mock
