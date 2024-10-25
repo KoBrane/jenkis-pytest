@@ -1,0 +1,26 @@
+name: Process PR
+
+on:
+  workflow_dispatch:
+    inputs:
+      PR_NUMBER:
+        description: 'The number of the pull request'
+        required: false
+        default: ''
+      PR_TITLE:
+        description: 'The title of the pull request'
+        required: false
+        default: ''
+
+jobs:
+  echo_pr_details:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Echo PR Details
+        run: |
+          if [ "${{ github.event.inputs.PR_NUMBER }}" ]; then
+            echo "Processing PR Number: ${{ github.event.inputs.PR_NUMBER }}"
+            echo "PR Title: ${{ github.event.inputs.PR_TITLE }}"
+          else
+            echo "No PR number provided."
+          fi
