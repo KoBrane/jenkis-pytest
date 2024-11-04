@@ -7,7 +7,7 @@ JENKINS_URL = 'http://localhost:8080'
 JOB_NAME = 'wedeymove'
 # Jenkins user credentials
 USERNAME = 'wils'
-API_TOKEN = '1137b5ee4ff4648ea9f7db3a92c5054c4a'
+API_TOKEN = '1137b5ee4ff4648ea9f7db3a92c5054c4a' //will have to remove this token in the future 
 
 def trigger_jenkins_job():
     # Jenkins job URL
